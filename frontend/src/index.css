@@ -1,0 +1,337 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #F8FAFC;
+  color: #0F172A;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Responsive container */
+.container-responsive {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+  .container-responsive {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-responsive {
+    padding: 0 2rem;
+  }
+}
+
+/* Mobile touch improvements */
+@media (hover: none) and (pointer: coarse) {
+  button, a, .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Safe area padding for notched devices */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Leaflet map customizations */
+.leaflet-container {
+  font-family: 'Inter', system-ui, sans-serif;
+  border-radius: 12px;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.leaflet-popup-content {
+  margin: 12px 16px;
+}
+
+/* Custom marker styles */
+.custom-marker {
+  background: linear-gradient(135deg, #2563EB, #06B6D4);
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Animation classes */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* SOS button styles */
+.sos-button {
+  background: linear-gradient(135deg, #DC2626, #EF4444);
+  box-shadow: 0 4px 14px 0 rgba(220, 38, 38, 0.39);
+  transition: all 0.3s ease;
+}
+
+.sos-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px 0 rgba(220, 38, 38, 0.5);
+}
+
+.sos-button:active {
+  transform: scale(0.98);
+}
+
+/* Card hover effects */
+.card-hover {
+  transition: all 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+/* Status indicators */
+.status-online {
+  background-color: #16A34A;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
+}
+
+.status-offline {
+  background-color: #94A3B8;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.2);
+}
+
+/* Form input focus styles */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Button base styles */
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 inline-flex items-center justify-center text-sm sm:text-base;
+}
+
+.btn-primary {
+  @apply bg-primary text-white hover:bg-primary-700 active:bg-primary-800;
+}
+
+.btn-secondary {
+  @apply bg-secondary text-white hover:bg-secondary-600 active:bg-secondary-700;
+}
+
+.btn-success {
+  @apply bg-success text-white hover:bg-success-700 active:bg-success-800;
+}
+
+.btn-danger {
+  @apply bg-danger text-white hover:bg-danger-700 active:bg-danger-800;
+}
+
+.btn-outline {
+  @apply border-2 border-primary text-primary hover:bg-primary hover:text-white;
+}
+
+/* Sidebar styles */
+.sidebar-link {
+  @apply flex items-center gap-3 px-4 py-3 rounded-lg text-muted hover:bg-gray-100 hover:text-text transition-all duration-200;
+}
+
+.sidebar-link.active {
+  @apply bg-primary/10 text-primary font-medium;
+}
+
+/* Responsive text utilities */
+.text-responsive-sm {
+  @apply text-xs sm:text-sm;
+}
+
+.text-responsive-base {
+  @apply text-sm sm:text-base;
+}
+
+.text-responsive-lg {
+  @apply text-base sm:text-lg md:text-xl;
+}
+
+.text-responsive-xl {
+  @apply text-lg sm:text-xl md:text-2xl;
+}
+
+.text-responsive-2xl {
+  @apply text-xl sm:text-2xl md:text-3xl;
+}
+
+.text-responsive-hero {
+  @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl;
+}
+
+/* Responsive spacing */
+.p-responsive {
+  @apply p-3 sm:p-4 md:p-6;
+}
+
+.px-responsive {
+  @apply px-3 sm:px-4 md:px-6;
+}
+
+.py-responsive {
+  @apply py-3 sm:py-4 md:py-6;
+}
+
+/* Responsive card */
+.card-responsive {
+  @apply bg-white rounded-xl sm:rounded-2xl shadow-card p-4 sm:p-6;
+}
+
+/* Responsive gap */
+.gap-responsive {
+  @apply gap-2 sm:gap-3 md:gap-4;
+}
+
+/* Hide scrollbar but allow scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Responsive grid layouts */
+.grid-responsive-2 {
+  @apply grid grid-cols-1 sm:grid-cols-2;
+}
+
+.grid-responsive-3 {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+}
+
+.grid-responsive-4 {
+  @apply grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4;
+}
+
+/* Mobile-friendly map container */
+.map-container {
+  @apply w-full rounded-xl overflow-hidden;
+  height: calc(100vh - 300px);
+  min-height: 300px;
+}
+
+@media (min-width: 640px) {
+  .map-container {
+    height: calc(100vh - 250px);
+    min-height: 400px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .map-container {
+    height: calc(100vh - 200px);
+    min-height: 500px;
+  }
+}
+
+/* Responsive modal */
+.modal-responsive {
+  @apply fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4;
+}
+
+.modal-content-responsive {
+  @apply bg-white w-full sm:w-auto sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[90vh] overflow-y-auto;
+}
+
+/* Touch-friendly interactive elements */
+@media (hover: none) {
+  .card-hover:hover {
+    transform: none;
+  }
+  
+  .card-hover:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Landscape mode adjustments */
+@media (max-height: 500px) and (orientation: landscape) {
+  .sos-button {
+    width: 100px !important;
+    height: 100px !important;
+  }
+  
+  .map-container {
+    min-height: 200px;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "guardianpath",
+  "version": "1.0.0",
+  "description": "GuardianPath - Family Safety and GPS Tracking Application",
+  "scripts": {
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && node server.js",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Shubhamkumar70/geofence.git"
+  },
+  "author": "Shubham Kumar",
+  "license": "MIT"
+}
