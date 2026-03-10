@@ -14,7 +14,10 @@ import {
 import { format, formatDistanceToNow } from "date-fns";
 import toast from "react-hot-toast";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+// In production (same origin), use empty string. In dev, use localhost:5000
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? "" : "http://localhost:5000");
 
 const alertTypeConfig = {
   sos: {
