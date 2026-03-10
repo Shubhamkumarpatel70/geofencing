@@ -5,11 +5,17 @@ import {
   Marker,
   Popup,
   Circle,
+  Polyline,
   useMap,
 } from "react-leaflet";
 import L from "leaflet";
 import { useSocket } from "../../context/SocketContext";
-import { childrenAPI, locationsAPI, geofencesAPI } from "../../services/api";
+import {
+  childrenAPI,
+  locationsAPI,
+  geofencesAPI,
+  alertsAPI,
+} from "../../services/api";
 import {
   HiOutlineRefresh,
   HiOutlineEye,
@@ -56,6 +62,80 @@ const createChildIcon = (isOnline) => {
   });
 };
 
+// Geofence Entry marker (Blue - returning to safe zone)
+const createEntryIcon = () => {
+  return L.divIcon({
+    className: "custom-marker",
+    html: `
+      <div style="
+        width: 28px;
+        height: 28px;
+        background: #2563EB;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 2px 6px rgba(37, 99, 235, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+          <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
+        </svg>
+      </div>
+    `,
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+    popupAnchor: [0, -28],
+  });
+};
+
+// Geofence Exit marker (Red - leaving safe zone)
+const createExitIcon = () => {
+  return L.divIcon({
+    className: "custom-marker",
+    html: `
+      <div style="
+        width: 28px;
+        height: 28px;
+        background: #DC2626;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 2px 6px rgba(220, 38, 38, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+          <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
+        </svg>
+      </div>
+    `,
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+    popupAnchor: [0, -28],
+  });
+};
+
+// Route point marker (Orange - movement point)
+const createRoutePointIcon = () => {
+  return L.divIcon({
+    className: "custom-marker",
+    html: `
+      <div style="
+        width: 12px;
+        height: 12px;
+        background: #F59E0B;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      "></div>
+    `,
+    iconSize: [12, 12],
+    iconAnchor: [6, 6],
+    popupAnchor: [0, -6],
+  });
+};
+
 // Map controller component
 const MapController = ({ center, zoom }) => {
   const map = useMap();
@@ -71,8 +151,11 @@ const LiveTracking = () => {
   const { childrenLocations, requestChildLocation, isConnected } = useSocket();
   const [children, setChildren] = useState([]);
   const [geofences, setGeofences] = useState([]);
+  const [geofenceEvents, setGeofenceEvents] = useState([]);
+  const [locationHistory, setLocationHistory] = useState({});
   const [selectedChild, setSelectedChild] = useState(null);
   const [showGeofences, setShowGeofences] = useState(true);
+  const [showRoute, setShowRoute] = useState(true);
   const [loading, setLoading] = useState(true);
   const [mapCenter, setMapCenter] = useState([20.5937, 78.9629]); // India center
   const [mapZoom, setMapZoom] = useState(12);
@@ -84,12 +167,44 @@ const LiveTracking = () => {
 
   const fetchData = async () => {
     try {
-      const [childrenRes, geofencesRes] = await Promise.all([
+      const [childrenRes, geofencesRes, alertsRes] = await Promise.all([
         locationsAPI.getAllChildrenLocations(),
         geofencesAPI.getAll(),
+        alertsAPI.getAll({ limit: 50 }),
       ]);
       setChildren(childrenRes.data.children);
       setGeofences(geofencesRes.data.geofences);
+
+      // Filter geofence entry/exit events from alerts
+      const geoEvents = (alertsRes.data.alerts || []).filter(
+        (alert) =>
+          (alert.type === "geofence_entry" || alert.type === "geofence_exit") &&
+          alert.location?.latitude,
+      );
+      setGeofenceEvents(geoEvents);
+
+      // Fetch recent location history for each child
+      const historyPromises = childrenRes.data.children.map(async (child) => {
+        try {
+          const histRes = await locationsAPI.getHistory(child._id, {
+            limit: 20,
+            startDate: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          });
+          return {
+            childId: child._id,
+            locations: histRes.data.locations || [],
+          };
+        } catch {
+          return { childId: child._id, locations: [] };
+        }
+      });
+
+      const historyResults = await Promise.all(historyPromises);
+      const historyMap = {};
+      historyResults.forEach(({ childId, locations }) => {
+        historyMap[childId] = locations;
+      });
+      setLocationHistory(historyMap);
 
       // Center map on first child with location
       const firstChild = childrenRes.data.children.find(
@@ -156,6 +271,13 @@ const LiveTracking = () => {
           </p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            onClick={() => setShowRoute(!showRoute)}
+            className={`btn text-sm ${showRoute ? "btn-secondary" : "btn-outline"}`}
+          >
+            <HiOutlineLocationMarker className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
+            <span className="hidden sm:inline">Route</span>
+          </button>
           <button
             onClick={() => setShowGeofences(!showGeofences)}
             className={`btn text-sm ${showGeofences ? "btn-primary" : "btn-outline"}`}
@@ -314,6 +436,33 @@ const LiveTracking = () => {
               </span>
             </div>
           </div>
+
+          {/* Map Legend */}
+          <div className="bg-white rounded-xl shadow-card p-4">
+            <h3 className="font-semibold text-text text-sm mb-3">Map Legend</h3>
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-gradient-to-br from-primary to-secondary border-2 border-white shadow-sm"></div>
+                <span className="text-muted">Child Location</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#2563EB] border-2 border-white shadow-sm"></div>
+                <span className="text-muted">Entered Safe Zone</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#DC2626] border-2 border-white shadow-sm"></div>
+                <span className="text-muted">Left Safe Zone</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-[#F59E0B] border border-white shadow-sm"></div>
+                <span className="text-muted">Route Point</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 border-t-2 border-dashed border-[#F59E0B]"></div>
+                <span className="text-muted">Movement Path</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Map */}
@@ -412,6 +561,110 @@ const LiveTracking = () => {
                 </Marker>
               );
             })}
+
+            {/* Route lines for each child */}
+            {showRoute &&
+              children.map((child) => {
+                const history = locationHistory[child._id] || [];
+                if (history.length < 2) return null;
+
+                const routeCoords = history
+                  .map((loc) => [loc.latitude, loc.longitude])
+                  .reverse();
+
+                return (
+                  <Polyline
+                    key={`route-${child._id}`}
+                    positions={routeCoords}
+                    pathOptions={{
+                      color: "#F59E0B",
+                      weight: 3,
+                      opacity: 0.7,
+                      dashArray: "8, 8",
+                    }}
+                  />
+                );
+              })}
+
+            {/* Route point markers */}
+            {showRoute &&
+              children.map((child) => {
+                const history = locationHistory[child._id] || [];
+                return history.slice(0, 10).map((loc, index) => (
+                  <Marker
+                    key={`route-point-${child._id}-${index}`}
+                    position={[loc.latitude, loc.longitude]}
+                    icon={createRoutePointIcon()}
+                  >
+                    <Popup>
+                      <div className="text-center">
+                        <p className="font-medium text-sm">{child.name}</p>
+                        <p className="text-xs text-muted">
+                          {formatDistanceToNow(new Date(loc.timestamp), {
+                            addSuffix: true,
+                          })}
+                        </p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                ));
+              })}
+
+            {/* Geofence Entry markers (Blue - returning to safe zone) */}
+            {geofenceEvents
+              .filter((e) => e.type === "geofence_entry")
+              .map((event) => (
+                <Marker
+                  key={`entry-${event._id}`}
+                  position={[event.location.latitude, event.location.longitude]}
+                  icon={createEntryIcon()}
+                >
+                  <Popup>
+                    <div className="text-center">
+                      <p className="font-semibold text-primary">
+                        🔵 Entered Safe Zone
+                      </p>
+                      <p className="text-sm">{event.child?.name}</p>
+                      <p className="text-xs text-muted">
+                        {event.geofence?.name || "Geofence"}
+                      </p>
+                      <p className="text-xs text-muted mt-1">
+                        {formatDistanceToNow(new Date(event.createdAt), {
+                          addSuffix: true,
+                        })}
+                      </p>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+
+            {/* Geofence Exit markers (Red - leaving safe zone) */}
+            {geofenceEvents
+              .filter((e) => e.type === "geofence_exit")
+              .map((event) => (
+                <Marker
+                  key={`exit-${event._id}`}
+                  position={[event.location.latitude, event.location.longitude]}
+                  icon={createExitIcon()}
+                >
+                  <Popup>
+                    <div className="text-center">
+                      <p className="font-semibold text-danger">
+                        🔴 Left Safe Zone
+                      </p>
+                      <p className="text-sm">{event.child?.name}</p>
+                      <p className="text-xs text-muted">
+                        {event.geofence?.name || "Geofence"}
+                      </p>
+                      <p className="text-xs text-muted mt-1">
+                        {formatDistanceToNow(new Date(event.createdAt), {
+                          addSuffix: true,
+                        })}
+                      </p>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
           </MapContainer>
         </div>
       </div>

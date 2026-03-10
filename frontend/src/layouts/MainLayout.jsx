@@ -155,13 +155,16 @@ const MainLayout = () => {
             <HiOutlineCog className="w-5 h-5" />
             <span>Settings</span>
           </NavLink>
-          <button
-            onClick={handleLogout}
-            className="sidebar-link w-full text-danger hover:bg-danger/10 hover:text-danger"
-          >
-            <HiOutlineLogout className="w-5 h-5" />
-            <span>Logout</span>
-          </button>
+          {/* Only show logout for parent accounts */}
+          {user?.role === "parent" && (
+            <button
+              onClick={handleLogout}
+              className="sidebar-link w-full text-danger hover:bg-danger/10 hover:text-danger"
+            >
+              <HiOutlineLogout className="w-5 h-5" />
+              <span>Logout</span>
+            </button>
+          )}
         </div>
       </aside>
 
